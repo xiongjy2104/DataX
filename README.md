@@ -41,12 +41,15 @@ core:
     BufferedRecordExchanger.java
     CoreConstant.java(常量)
     Engine.java
+    
 plugin-rdbms-util
     ReaderSplitUtil.java
     SingleTableSplitUtil.java
     Key.java(常量)
+    
 odpsreader
     pom.xml(升级了odps-sdk-core依赖到0.24.0-public版本)
+    
 odpswriter
     pom.xml(升级了odps-sdk-core依赖到0.24.0-public版本)
 
