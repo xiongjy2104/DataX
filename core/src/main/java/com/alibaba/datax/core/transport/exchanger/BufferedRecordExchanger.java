@@ -67,6 +67,10 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 		}
 	}
 
+	public Configuration getConfiguration() {
+		return configuration;
+	}
+	
 	@Override
 	public Record createRecord() {
 		try {
