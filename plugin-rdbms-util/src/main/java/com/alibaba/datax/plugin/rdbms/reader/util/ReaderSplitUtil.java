@@ -110,6 +110,23 @@ public final class ReaderSplitUtil {
         return splittedConfigs;
     }
 
+    private static String buildCheckpointSql(Configuration originalConfig) {
+        String incremental_sync_column = originalConfig.getString(Key.INCREMENTAL_SYNC_COLUMN);
+        if( !StringUtils.isBlank(incremental_sync_column)) {//表示增量
+            Map checkpoint = originalConfig.getMap(Key.CHECKPOINT);
+            List<String> tables = originalConfig.getList("connection[0].table", String.class);
+            if (checkpoint!=null && tables.size() == 1) {//目前仅支持单connection
+                for (String table : tables) {
+                    String checkpointValue= (String) checkpoint.get(table+"."+incremental_sync_column);
+                    LOG.info("checkpointValue="+checkpointValue);
+                    if(!StringUtils.isBlank(checkpointValue))
+                        return " "+incremental_sync_column+" >'"+checkpointValue+"'";
+                }
+            }
+        }
+        return "";
+    }
+
     public static Configuration doPreCheckSplit(Configuration originalSliceConfig) {
         Configuration queryConfig = originalSliceConfig.clone();
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
