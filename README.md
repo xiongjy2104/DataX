@@ -17,9 +17,12 @@
 
 # 源码阅读提示
 
-Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->ReaderSplitUtil.doSplit-> SingleTableSplitUtil.buildQuerySql->schedule->AbstractScheduler.schedule->ProcessInnerScheduler.startAllTaskGroup->ExecutorService.execute()->while(true) -> containerCommunicator.collect()->多次report()->State.SUCCEEDED->break;                                               
-               WriterRunner->OdpsWriter.prepare->startWrite(BufferedRecordExchanger.getFromReader->receive->Channel.pullAll->MemoryChannel.doPullAll->updateCheckpoint->saveCheckpoint
-		ReaderRunner->MysqlReader.startRead->CommonRdbmsReader.startRead->transportOneRecord-> BufferedRecordExchanger.sendToWriter->flush->Channel.pushAll->MemoryChannel.doPushAll
+1. Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->ReaderSplitUtil.doSplit-> SingleTableSplitUtil.buildQuerySql->schedule->AbstractScheduler.schedule->ProcessInnerScheduler.startAllTaskGroup->ExecutorService.execute()->while(true) -> containerCommunicator.collect()->多次report()->State.SUCCEEDED->break;                         
+
+
+2.a. WriterRunner->OdpsWriter.prepare->startWrite(BufferedRecordExchanger.getFromReader->receive->Channel.pullAll->MemoryChannel.doPullAll->updateCheckpoint->saveCheckpoint;
+
+2.b. ReaderRunner->MysqlReader.startRead->CommonRdbmsReader.startRead->transportOneRecord-> BufferedRecordExchanger.sendToWriter->flush->Channel.pushAll->MemoryChannel.doPushAll;
 
 Engine.java读配置时，增加loadCheckpoint方法（加载checkpoint文件内容到job.content[0].reader.parameter.checkpoint={})
 SingleTableSplitUtil.buildQuerySql(重载方法新增参数)
