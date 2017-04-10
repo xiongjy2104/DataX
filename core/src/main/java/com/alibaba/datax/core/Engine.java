@@ -17,13 +17,14 @@ import com.alibaba.datax.core.util.container.LoadUtil;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,6 +56,7 @@ public class Engine {
         int taskGroupId = -1;
         if (isJob) {
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
+            loadCheckpoint(allConf);
             container = new JobContainer(allConf);
             instanceId = allConf.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
@@ -92,7 +94,31 @@ public class Engine {
         container.start();
 
     }
-
+    
+    public static void loadCheckpoint(Configuration allConf) {
+        Long jobId = allConf.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        LOG.info("jobId="+jobId);
+        String checkpointPath=System.getProperty("sync.checkpoint.path");
+        LOG.info("checkpointPath="+checkpointPath);
+        String checkpointFile=(StringUtils.isBlank(checkpointPath)? CoreConstant.DATAX_BIN_HOME : checkpointPath)+"/job."+jobId+".checkpoint";
+        LOG.info("checkpointFile="+checkpointFile);
+        File file=new File(checkpointFile);
+        FileInputStream fis=null;
+        Properties cpp=new Properties();
+        if(file.exists()){
+            try {
+                    fis=new FileInputStream(file);
+                    cpp.load(fis);
+                LOG.info("cpp="+cpp);
+                allConf.set(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT,Configuration.from((Map)cpp));
+                LOG.info("allConf="+allConf);
+            } catch (Exception e) {
+                LOG.info("error load checkpointFile, skipped.");
+            }finally {
+                IOUtils.closeQuietly(fis);
+            }
+        }
+    }
 
     // 注意屏蔽敏感信息
     public static String filterJobConfiguration(final Configuration configuration) {
