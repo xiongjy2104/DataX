@@ -75,6 +75,16 @@ public class CoreConstant {
 
 	public static final String DATAX_JOB_CONTENT_WRITER_PARAMETER = "job.content[0].writer.parameter";
 
+	public static final String DATAX_JOB_CONTENT_READER_PARAMETER_TABLE = "job.content[0].reader.parameter.table";
+
+	public static final String DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT = "job.content[0].reader.parameter.checkpoint";
+
+	public static final String DATAX_JOB_CONTENT_READER_PARAMETER_INCREMENTALSYNCCOLUMN = "job.content[0].reader.parameter.incrementalSyncColumn";
+
+	public static final String DATAX_JOB_CONTENT_READER_PARAMETER_COLUMN = "job.content[0].reader.parameter.column";
+
+	public static final String DATAX_JOB_CONTENT_READER_PARAMETER_COLUMNLIST = "job.content[0].reader.parameter.columnList";
+
 	public static final String DATAX_JOB_JOBINFO = "job.jobInfo";
 
 	public static final String DATAX_JOB_CONTENT = "job.content";
