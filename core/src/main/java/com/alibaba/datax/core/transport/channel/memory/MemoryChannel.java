@@ -7,11 +7,15 @@ import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -20,6 +24,12 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  */
 public class MemoryChannel extends Channel {
+
+	private static final Logger LOG = LoggerFactory.getLogger(MemoryChannel.class);
+
+	private AtomicLong checkpoint = new AtomicLong(-1);
+
+	private CheckpointComparator checkpointComparator=null;
 
 	private int bufferSize = 0;
 
@@ -95,6 +105,8 @@ public class MemoryChannel extends Channel {
 			long startTime = System.nanoTime();
 			Record r = this.queue.take();
 			waitReaderTime += System.nanoTime() - startTime;
+			
+			updateCheckpoint(Arrays.asList(r));	
 			memoryBytes.addAndGet(-r.getMemorySize());
 			return r;
 		} catch (InterruptedException e) {
@@ -115,6 +127,8 @@ public class MemoryChannel extends Channel {
 			}
 			waitReaderTime += System.nanoTime() - startTime;
 			int bytes = getRecordBytes(rs);
+			
+			updateCheckpoint(rs);
 			memoryBytes.addAndGet(-bytes);
 			notInsufficient.signalAll();
 		} catch (InterruptedException e) {
@@ -122,6 +136,70 @@ public class MemoryChannel extends Channel {
 					FrameworkErrorCode.RUNTIME_ERROR, e);
 		} finally {
 			lock.unlock();
+		}
+	}
+
+	private void updateCheckpoint(Collection<Record> rs) {
+		long currCheckpoint=checkpoint.get();
+
+		LOG.info("MemoryChannel configuration="+configuration.toJSON());
+
+		String syncColumn=configuration.getString(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_INCREMENTALSYNCCOLUMN);
+		List<String> columns= configuration.getList(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_COLUMNLIST,String.class);
+		int index=-1;
+		for(int i=0;i<columns.size();i++){
+                    if(columns.get(i).equals(syncColumn)) {
+                        index=i;
+                        break;
+                    }
+                }
+		if(index==-1)
+                    throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                    String.format("最可能的原因是增量同步字段[%s]没有包含在[%s]", syncColumn,columns));
+		if(((Record)rs.toArray()[0]) instanceof TerminateRecord){
+			LOG.info("Record is TerminateRecord, skipped.");
+			return;
+		}
+		checkpointComparator=new CheckpointComparator(index);
+		long newCheckpoint= Collections.max(rs,checkpointComparator).getColumn(index).asLong();
+		if(newCheckpoint-currCheckpoint>0) {
+			checkpoint.compareAndSet(currCheckpoint, newCheckpoint);
+		}
+		Column.Type columnType=((Record)rs.toArray()[0]).getColumn(index).getType();
+		Map map=configuration.getMap(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT);
+		map.put(configuration.getString(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_TABLE)+"."+syncColumn,format(columnType,checkpoint.get()));
+		configuration.set(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT,map);
+		LOG.info("configuration="+configuration.toString());
+	}
+
+	private String format(Column.Type columnType, long value) {
+		switch (columnType) {
+			case DATE:
+				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				return format.format(new Date(value));
+			case INT:
+			case LONG:
+			case DOUBLE:
+				return String.valueOf(value);
+			default:
+				LOG.warn("not a valid value="+value );
+				return String.valueOf(value);
+		}
+	}
+
+	private class CheckpointComparator implements Comparator<Record> {
+		int columnIndex=-1;
+		public  CheckpointComparator(int columnIndex){
+			this.columnIndex=columnIndex;
+		}
+		@Override
+		public int compare(Record r1, Record r2) {
+			// 正数代表第一个数大于第二个数
+			if(r1 instanceof TerminateRecord)
+				return -1;
+			if(r2 instanceof TerminateRecord)
+				return 1;
+			return (r1.getColumn(columnIndex).asLong() < r2.getColumn(columnIndex).asLong() ? -1 : (r1.getColumn(columnIndex).asLong() == r2.getColumn(columnIndex).asLong() ? 0 : 1));
 		}
 	}
 
