@@ -4,10 +4,20 @@ import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfRecord;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Created by jingxing on 14-9-1.
@@ -59,6 +69,9 @@ public class WriterRunner extends AbstractRunner implements Runnable {
             dataPerfRecord.addSize(CommunicationTool.getTotalReadBytes(super.getRunnerCommunication()));
             dataPerfRecord.end();
 
+            LOG.debug("task writer starts to save checkpoint ...");
+            saveCheckpoint(((BufferedRecordExchanger)recordReceiver).getConfiguration());
+       
             LOG.debug("task writer starts to do post ...");
             PerfRecord postPerfRecord = new PerfRecord(getTaskGroupId(), getTaskId(), PerfRecord.PHASE.WRITE_TASK_POST);
             postPerfRecord.start();
@@ -79,6 +92,37 @@ public class WriterRunner extends AbstractRunner implements Runnable {
         }
     }
     
+    public static void saveCheckpoint(Configuration originalConfig) {
+        Long jobId = originalConfig.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        if(jobId==0)
+            jobId=-1L;
+        LOG.info("jobId="+jobId);
+        String checkpointPath=System.getProperty("sync.checkpoint.path");
+        LOG.info("checkpointPath="+checkpointPath);
+        String checkpointFile=(StringUtils.isBlank(checkpointPath)? CoreConstant.DATAX_BIN_HOME:checkpointPath)+"/job."+jobId+".checkpoint";
+        LOG.info("checkpointFile="+checkpointFile);
+        File file=new File(checkpointFile);
+        FileOutputStream fos=null;
+        Properties cpp=new Properties();
+        try {
+            Map<String, Object> map =originalConfig.getMap(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT);
+            for (Object o : map.entrySet()) {
+                Map.Entry entry = (Map.Entry) o;
+                cpp.setProperty((String)entry.getKey(), String.valueOf(entry.getValue()));
+            }
+            if(!file.exists()){
+                file.createNewFile();
+            }
+            fos=new FileOutputStream(file);
+            cpp.store(fos,"checkpoints saved here.");
+            fos.flush();
+        } catch (Exception e) {
+            LOG.info("Exception ="+e);
+        }finally {
+            IOUtils.closeQuietly(fos);
+        }
+    }
+
     public boolean supportFailOver(){
     	Writer.Task taskWriter = (Writer.Task) this.getPlugin();
     	return taskWriter.supportFailOver();
