@@ -11,7 +11,7 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 
 # 如何设定增量同步
 
-很简单，在reader参数中增加"incrementalSyncColumn": "your_column_name_here_XXX"即可，要求该字段必须也在column参数中列出。读取时只会读取上次checkpoint之后的数据。
+很简单，在reader参数中增加"incrementalSyncColumn": "your_column_name_here_XXX"即可，要求该字段必须也在column参数中列出。读取时只会读取上次checkpoint之后的数据。支持增量同步的字段的数据类型包括各类bigint，int，long，double等数值型字段，也支持datetime，date，timestamp等时间型字段，会自动识别。
 去掉该字段即恢复。
 另外注意：如果writer参数中指明了"truncate": true，则写入时会只剩下增量部分，所以建议增量同步时设为false
 
