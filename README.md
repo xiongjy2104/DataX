@@ -1,4 +1,5 @@
-说明：工作中用到了DataX这个来自阿里巴巴的非常不错的工具，其具体介绍可直接访问[这里](https://github.com/alibaba/DataX)，可是有一点，其增量同步功能不是很好用，好像也有阵子没更新了。因此此版基于阿里巴巴的DataX进行了一些简单修改，增加了增量同步和实时同步的功能。修改仅为满足自用需求，尽量但没有经过完全覆盖测试（主要跑了mysql2odps），恐非最佳方案，仅供有兴趣者参考。
+# 说明
+工作中用到了DataX这个来自阿里巴巴的非常不错的工具，其具体介绍可直接访问[这里](https://github.com/alibaba/DataX)，可是有一点，其增量同步功能不是很好用，好像也有阵子没更新了。因此此版基于阿里巴巴的DataX进行了一些简单修改，增加了增量同步和实时同步的功能。修改仅为满足自用需求，尽量但没有经过完全覆盖测试（主要跑了mysql2odps），恐非最佳方案，仅供有兴趣者参考。
 
 # DataX
 
@@ -23,7 +24,7 @@ Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->Reade
                
                WriterRunner->OdpsWriter.prepare->startWrite(BufferedRecordExchanger.getFromReader->receive->Channel.pullAll->MemoryChannel.doPullAll->updateCheckpoint->saveCheckpoint
 
-									      ReaderRunner->MysqlReader.startRead->CommonRdbmsReader.startRead->transportOneRecord->BufferedRecordExchanger.sendToWriter->flush->Channel.pushAll->MemoryChannel.doPushAll
+		ReaderRunner->MysqlReader.startRead->CommonRdbmsReader.startRead->transportOneRecord-> BufferedRecordExchanger.sendToWriter->flush->Channel.pushAll->MemoryChannel.doPushAll
 
 Engine.java读配置时，增加loadCheckpoint方法（加载checkpoint文件内容到job.content[0].reader.parameter.checkpoint={})
 SingleTableSplitUtil.buildQuerySql(重载方法新增参数)
