@@ -20,6 +20,10 @@ public final class Key {
     public final static String COLUMN_LIST = "columnList";
 
     public final static String WHERE = "where";
+	
+    public final static String INCREMENTAL_SYNC_COLUMN = "incrementalSyncColumn";
+
+    public final static String CHECKPOINT = "checkpoint";
 
     public final static String HINT = "hint";
 
