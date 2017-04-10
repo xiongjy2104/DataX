@@ -9,6 +9,13 @@ DataX 是阿里巴巴集团内被广泛使用的离线数据同步工具/平台�
 
 DataX本身作为数据同步框架，将不同数据源的同步抽象为从源头数据源读取数据的Reader插件，以及向目标端写入数据的Writer插件，理论上DataX框架可以支持任意数据源类型的数据同步工作。同时DataX插件体系作为一套生态系统, 每接入一套新数据源该新加入的数据源即可实现和现有的数据源互通。
 
+# 如何设定增量同步
+
+很简单，在reader参数中增加"incrementalSyncColumn": "your_column_name_here_XXX"即可，要求该字段必须也在column参数中列出。读取时只会读取上次checkpoint之后的数据。
+去掉该字段即恢复。
+另外注意：如果writer参数中指明了"truncate": true，则写入时会只剩下增量部分，所以建议增量同步时设为false
+
+
 # 源码阅读提示
 
 Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->ReaderSplitUtil.doSplit-> SingleTableSplitUtil.buildQuerySql->schedule->AbstractScheduler.schedule->ProcessInnerScheduler.startAllTaskGroup->ExecutorService.execute()->while(true) -> containerCommunicator.collect()->多次report()->State.SUCCEEDED->break;
