@@ -10,6 +10,10 @@ DataX 是阿里巴巴集团内被广泛使用的离线数据同步工具/平台�
 
 DataX本身作为数据同步框架，将不同数据源的同步抽象为从源头数据源读取数据的Reader插件，以及向目标端写入数据的Writer插件，理论上DataX框架可以支持任意数据源类型的数据同步工作。同时DataX插件体系作为一套生态系统, 每接入一套新数据源该新加入的数据源即可实现和现有的数据源互通。
 
+# 增量同步实现原理
+
+原理是记录同步的checkpoint文件，位于bin/job.{jobId}.checkpoint，格式databaseName.tableName.columnName=1234 / 2017-01-01 11:11:11
+
 # 如何设定增量同步
 
 很简单，在reader参数中增加"incrementalSyncColumn": "your_column_name_here_XXX"即可，要求该字段必须也在column参数中列出。读取时只会读取上次checkpoint之后的数据。支持增量同步的字段的数据类型包括各类bigint，int，long，double等数值型字段，也支持datetime，date，timestamp等时间型字段，会自动识别。
@@ -17,13 +21,11 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 另外注意：如果writer参数中指明了"truncate": true，则写入时会只剩下增量部分，所以建议增量同步时设为false
 
 
+
 # 源码阅读提示
 
-Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->ReaderSplitUtil.doSplit-> SingleTableSplitUtil.buildQuerySql->schedule->AbstractScheduler.schedule->ProcessInnerScheduler.startAllTaskGroup->ExecutorService.execute()->while(true) -> containerCommunicator.collect()->多次report()->State.SUCCEEDED->break;
-                                               State.FAILED>break;
-               
+Engine.start->JobContainer.start->split->doReaderSplit->MysqlReader.split->ReaderSplitUtil.doSplit-> SingleTableSplitUtil.buildQuerySql->schedule->AbstractScheduler.schedule->ProcessInnerScheduler.startAllTaskGroup->ExecutorService.execute()->while(true) -> containerCommunicator.collect()->多次report()->State.SUCCEEDED->break;                                               
                WriterRunner->OdpsWriter.prepare->startWrite(BufferedRecordExchanger.getFromReader->receive->Channel.pullAll->MemoryChannel.doPullAll->updateCheckpoint->saveCheckpoint
-
 		ReaderRunner->MysqlReader.startRead->CommonRdbmsReader.startRead->transportOneRecord-> BufferedRecordExchanger.sendToWriter->flush->Channel.pushAll->MemoryChannel.doPushAll
 
 Engine.java读配置时，增加loadCheckpoint方法（加载checkpoint文件内容到job.content[0].reader.parameter.checkpoint={})
