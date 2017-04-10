@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class ReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
@@ -30,6 +31,7 @@ public final class ReaderSplitUtil {
 
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
+        String whereCheckpoint = buildCheckpointSql(originalSliceConfig);
 
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
@@ -85,7 +87,8 @@ public final class ReaderSplitUtil {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
                         String queryColumn = HintUtil.buildQueryColumn(jdbcUrl, table, column);
-                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil.buildQuerySql(queryColumn, table, where));
+                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil.buildQuerySql(queryColumn, table, where, whereCheckpoint));                       LOG.info("query_sql final="+tempSlice.get(Key.QUERY_SQL));
+                        LOG.info("query_sql final="+tempSlice.get(Key.QUERY_SQL));
                         splittedConfigs.add(tempSlice);
                     }
                 }
@@ -97,6 +100,7 @@ public final class ReaderSplitUtil {
                 for (String querySql : sqls) {
                     tempSlice = sliceConfig.clone();
                     tempSlice.set(Key.QUERY_SQL, querySql);
+                    LOG.info("query_sql final ="+tempSlice.get(Key.QUERY_SQL));
                     splittedConfigs.add(tempSlice);
                 }
             }
