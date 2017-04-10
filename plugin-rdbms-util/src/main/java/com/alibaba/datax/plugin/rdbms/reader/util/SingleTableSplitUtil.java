@@ -137,6 +137,26 @@ public class SingleTableSplitUtil {
 
         return querySql;
     }
+    
+    public static String buildQuerySql(String column, String table,
+                                       String where, String whereCheckpoint) {
+        String querySql;
+
+        if (StringUtils.isBlank(where) && StringUtils.isBlank(whereCheckpoint)) {
+            querySql = String.format(Constant.QUERY_SQL_TEMPLATE_WITHOUT_WHERE,
+                    column, table);
+        } else {
+            if (StringUtils.isBlank(where) || StringUtils.isBlank(whereCheckpoint)) {
+                querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
+                        table,  (StringUtils.isBlank(where) ? whereCheckpoint : where ));
+            }else {
+                querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
+                        table, (StringUtils.isBlank(where) ? whereCheckpoint : (where + " and " + whereCheckpoint)));
+            }
+        }
+
+        return querySql;
+    }
 
     @SuppressWarnings("resource")
     private static Pair<Object, Object> getPkRange(Configuration configuration) {
