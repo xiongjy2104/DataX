@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.transport.channel.memory;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.channel.Channel;
@@ -167,6 +167,9 @@ public class MemoryChannel extends Channel {
 		}
 		Column.Type columnType=((Record)rs.toArray()[0]).getColumn(index).getType();
 		Map map=configuration.getMap(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT);
+		if(map==null) {
+			map = new HashMap();
+		}
 		map.put(configuration.getString(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_TABLE)+"."+syncColumn,format(columnType,checkpoint.get()));
 		configuration.set(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER_CHECKPOINT,map);
 		LOG.info("configuration="+configuration.toString());
