@@ -137,7 +137,11 @@ public class UnstructuredStorageWriterUtil {
             Configuration splitedTaskConfig = writerSliceConfig.clone();
             String fullFileName = null;
             fileSuffix = UUID.randomUUID().toString().replace('-', '_');
-            fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+            if(i==0){
+                fullFileName=fileSuffix;
+            }else {
+                fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+            }
             while (allFileExists.contains(fullFileName)) {
                 fileSuffix = UUID.randomUUID().toString().replace('-', '_');
                 fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
