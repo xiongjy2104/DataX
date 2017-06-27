@@ -235,8 +235,12 @@ public class TxtFileWriter extends Writer {
                         .clone();
 
                 String fullFileName = null;
-                fileSuffix = UUID.randomUUID().toString().replace('-', '_');
-                fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+                if(i==0){
+                    fullFileName=filePrefix;
+                }else {
+                    fileSuffix = UUID.randomUUID().toString().replace('-', '_');
+                    fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+                }
                 while (allFiles.contains(fullFileName)) {
                     fileSuffix = UUID.randomUUID().toString().replace('-', '_');
                     fullFileName = String.format("%s__%s", filePrefix,
