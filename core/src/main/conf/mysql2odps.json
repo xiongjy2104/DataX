@@ -1,0 +1,47 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "{DB_USERNAME}",
+                        "password": "{DB_PASSWORD}",
+                        "column": [{COLUMN_LIST}],
+                        "where": " 1=1 ",
+
+
+                        "connection": [
+                            {
+                                "table": [
+                                    {TABLE_LIST}
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:mysql://{DATABASE_SERVER}"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "odpswriter",
+                    "parameter": {
+                        "accessId": "zzzzzzzzzzzzzzzzzz",
+                        "accessKey": "xxxxxxxxxxxxxxxxxxx",
+                        "column": [{COLUMN_LIST}],
+                        "odpsServer": "http://service.odps.aliyun.com/api",
+                        "project": "odps_dev",
+                        "table": "{ODPS_TABLE_NAME}",
+			"partition":"pt={yesterday}",
+                        "truncate": true
+                    }
+                }
+            }
+        ],
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        }
+    }
+}
